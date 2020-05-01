@@ -4,26 +4,30 @@ const server = http.createServer((req, res) => {
   const now = new Date();
   console.info('[' + now + '] Requested by ' + req.connection.remoteAddress);
   res.writeHead(200, {
-    'Content-Type': 'text/plain; charset=utf-8'
+    'Content-Type': 'text/html; charset=utf-8'
   });
 
   switch (req.method) {
     case 'GET':
-      res.write('GET ' + req.url);
+      const fs = require('fs');
+      const rs = fs.createReadStream('./index.html');
+      rs.pipe(res);
       break;
     case 'POST':
-      res.write('POST ' + req.url);
-      let rawData = '';
+      let body = [];
       req.on('data', (chunk) => {
-        rawData = rawData + chunk;
+        body.push(chunk);
       }).on('end', () => {
-        console.info('[' + now + '] Data posted: ' + rawData);
+        body = Buffer.concat(body).toString();
+        const decoded = decodeURIComponent(body);
+        console.info('[' + now + '] 投稿: ' + decoded);
+        res.write(` ${decoded} が選ばれました`);
+        res.end();
       });
       break;
     default:
       break;
   }
-  res.end();
 }).on('error', (e) => {
   console.error('[' + new Date() + '] Server Error', e);
 }).on('clientError', (e) => {
